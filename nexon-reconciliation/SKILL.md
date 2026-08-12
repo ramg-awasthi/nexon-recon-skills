@@ -101,8 +101,10 @@ to `nexon-recon-exception-investigator`.
    Do not paste invoice lines, account details, candidate IDs, or raw candidate
    payloads in chat or MCP arguments.
 9. Allow auto-match only for a verified deterministic rule with service,
-   provider, and period evidence. Route zero, multiple, provisional, and
-   billing-only cases to the exception workflow.
+   customer/account mapping, provider, and period evidence. Treat amount as
+   variance evidence for the report, not as a deterministic match key. Route
+   zero, multiple, provisional, and billing-only cases to the exception
+   workflow.
 10. If core persistence is disabled, record `skip` and continue. Accepted
    resolutions remain disabled.
 11. Prepare upload sessions for the frozen final artifact set with
@@ -130,9 +132,10 @@ invoice windows for candidate retrieval and matching.
 
 Report raw rows, charge-input rows, reference/header rows, aggregation input and
 output rows, suppressed rows, normalized output rows, and financial totals.
-Do not group multiple charged source rows into fewer normalized rows unless the
-runtime declares a provider/version rule with explicit proof. AAPT raw usage
-rows remain visible in parsed accounting; refined/reconciled output may apply a
+Do not group multiple charged source rows in ParsedOutput. Raw parsed rows
+remain audit grain. Refined/ReconciledOutput may use a runtime-declared
+provider/version reconciliation grain with explicit proof. AAPT raw usage rows
+remain visible in parsed accounting; refined/reconciled output may apply a
 proven provider rule. AAPT invoice `21919695` proves `rec010` internet usage
 collapsed from 181 source rows to one persisted/result row.
 
