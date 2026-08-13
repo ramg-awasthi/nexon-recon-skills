@@ -11,8 +11,9 @@ nexon-recon billing-candidates
 Fleet first calls `recon_db_prepare_billing_candidates` with the runtime-emitted
 plan SHA/size to get a scoped upload session. The command then streams the plan
 through that session to the configured Database MCP billing-candidate operation,
-`recon_db_get_billing_candidates`, without placing full invoice-line payloads
-in Fleet tool arguments. The agent does not call that MCP tool directly during
+polls the MCP job/status route, downloads paginated result artifacts, and
+rebuilds the final local response without placing full invoice-line payloads in
+Fleet tool arguments. The agent does not call that MCP tool directly during
 normal runs and does not author, edit, repair, or retry core billing SQL. The
 Database MCP owns the versioned physical-column mapping, provider identifier
 precedence, read-only query, schema validation, transaction isolation, row
@@ -59,6 +60,13 @@ Do not summarize, rewrite, split, print, or inspect invoice details beyond the
 runtime command. Do not translate field names, add guessed columns, generate SQL
 chunks, paste `invoice_lines` into MCP arguments, expose the scoped upload
 token, or replace the lookup with `recon_db_read_query`.
+
+The scoped session is short lived, with a 60-minute server TTL. The command
+waits between MCP status checks, prints sanitized heartbeat lines as progress,
+downloads result pages when the job succeeds, and writes the complete
+`candidate_response.json`. Page size is only a transport chunk size; it is not a
+normal reconciliation failure limit. If the job fails or times out, the command
+writes one failed MCP-style response with a single blocker code.
 
 ## Response And Resume
 
