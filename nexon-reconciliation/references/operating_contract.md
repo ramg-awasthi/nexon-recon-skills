@@ -96,6 +96,9 @@ not by re-indexing the upload folder.
   `recon_db_prepare_billing_candidates`, then runs
   `nexon-recon billing-candidates --plan ... --session ... --output ...`
   exactly once and does not paste invoice lines into MCP arguments;
+- the runtime command owns MCP job polling and paginated result download, so the
+  supervisor treats heartbeat lines as progress and waits for that command
+  result instead of splitting or retrying the request;
 - the same run resumes with `--billing-candidate-response`;
 - the runtime validates the response schema, environment, run ID, mapping
   version, schema contract/fingerprint, input hash, candidate identities, and
