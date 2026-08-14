@@ -13,13 +13,14 @@ plan SHA/size to get a scoped upload session. The command then streams the plan
 through that session to the configured Database MCP billing-candidate operation,
 polls the MCP job/status route, downloads paginated result artifacts, and
 rebuilds the final local response without placing full invoice-line payloads in
-Fleet tool arguments. The agent does not call that MCP tool directly during
-normal runs and does not author, edit, repair, or retry core billing SQL. The
-Database MCP owns the versioned physical-column mapping, provider identifier
-precedence, read-only query, schema validation, transaction isolation, row
-limits, and sanitized audit receipt. Dev and prod may bind to different
-schemas, but they must implement the same contract and declare their mapping
-version and schema fingerprint.
+Fleet tool arguments. Server-side, that prepared job executes
+`recon_db_get_billing_candidates`; the agent does not call that tool directly
+during normal runs and does not author, edit, repair, or retry core billing SQL.
+The Database MCP owns the versioned physical-column mapping, provider
+identifier precedence, read-only query, schema validation, transaction
+isolation, row limits, and sanitized audit receipt. Dev and prod may bind to
+different schemas, but they must implement the same contract and declare their
+mapping version and schema fingerprint.
 
 ## Frozen Plain Request
 

@@ -24,9 +24,9 @@ Stage order:
 6. billing-candidate request/response handoff
 7. deterministic comparison
 8. core persistence or audited report-only skip
-9. raw workbook
+9. raw report
 10. exception investigation when unresolved rows exist
-11. refined workbook
+11. refined report
 12. final publication
 13. validation
 14. notification when enabled
@@ -126,7 +126,7 @@ source move mode, or `can_run=true`, the run stops before parsing.
 `core_persistence` and `accepted_resolution_update` follow the active runtime
 policy. When disabled, both stages are recorded as `skipped`; the run still
 performs billing lookup, deterministic matching, exception investigation where
-needed, raw/refined workbook generation, publication, and final validation. No
+needed, raw/refined report generation, publication, and final validation. No
 persistence request is produced and no database write tool is called.
 
 If persistence is enabled in a separately approved future policy, it must use
@@ -165,10 +165,13 @@ publication.
 
 ## Status And Matching Rules
 
-The raw workbook preserves all current reconciliation fields and status values.
-The refined workbook preserves every raw field and adds the approved agent and
-human-review fields. A parser-only test cannot report billing comparison,
-matching, reconciliation workbooks, or publication completion.
+The raw report preserves all current reconciliation fields and status values.
+The refined report preserves every raw field and adds the approved agent and
+human-review fields. The format is frozen at run creation: `xlsx` is the
+default and `NEXON_RECON_REPORT_FORMAT=csv` selects CSV. Publication uses the
+runtime-emitted extension and bytes unchanged; the agent never renames,
+converts, or re-saves a report. A parser-only test cannot report billing
+comparison, matching, reconciliation reports, or publication completion.
 
 Auto-match requires a verified mapping rule and deterministic provider,
 account, service, period, and cardinality evidence. Provisional rules and
