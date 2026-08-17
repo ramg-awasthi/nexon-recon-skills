@@ -26,6 +26,14 @@ parser from the skill directory.
   lookup account, metadata account, and customer billing account.
 - Emit stable line IDs, invoice/service identifiers, billing windows, amounts,
   source provenance, warnings, and accounting.
+- For AAPT, process the enabled `rec001`, `rec004`, `rec005`, and `rec010`
+  families. Require `rec001` for invoice/account/period identity and `rec005`
+  for primary service charges; include optional `rec004` and `rec010` when present.
+  Account for `rec002` and `rec006` as disabled current-scope families and
+  `rec012` as reference-only; they must not create matchable charge lines.
+- Preserve the full AAPT invoice service identifier. Do not shorten it at a
+  dash or aggregate it before deterministic billing matching. Mark `rec004`
+  account-level rows as reportable but not eligible for service matching.
 
 ## Invocation
 
@@ -62,9 +70,9 @@ layout, ambiguous route, or invalid financial value fails closed with a stable
 code.
 
 Default parser grain is one charge-bearing source row to one normalized output
-line. Aggregation is allowed only when the runtime declares a provider/version
-rule backed by production evidence; otherwise it is a parser flaw, not a
-shortcut.
+line. Keep that grain through billing lookup and deterministic matching.
+Aggregation belongs only to refined reporting after multiple rows share one
+verified billing identity; otherwise it is a parser flaw, not a shortcut.
 
 Provider-specific evidence and known format boundaries are documented in
 `references/providers/`. Those references explain formats; they do not replace

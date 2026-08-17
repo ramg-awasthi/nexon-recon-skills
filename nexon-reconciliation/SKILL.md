@@ -21,7 +21,7 @@ to `nexon-recon-exception-investigator`.
   runtime-requested source movement. Use native SharePoint only for setup
   validation.
 - Use `recon_db_prepare_billing_candidates` once with the runtime-emitted plan
-  SHA/size, then use `nexon-recon billing-candidates` once with the scoped
+  SHA/size, then use `nexon-recon billing-candidates` with the scoped
   session and frozen `billing_candidate_plan`. Do not call
   `recon_db_get_billing_candidates` directly during normal runs. Use
   `recon_db_read_query` only for bounded exception evidence.
@@ -95,22 +95,32 @@ to `nexon-recon-exception-investigator`.
    `recon_db_prepare_billing_candidates` with the runtime-emitted plan SHA/size,
    save the scoped session, then run
     `nexon-recon billing-candidates --plan ... --session ... --output ...`
-    exactly once with the frozen `billing_candidate_plan`, then use
+    with the frozen `billing_candidate_plan`, then use
     `nexon-recon resume
     --billing-candidate-response ...`.
     The command owns plan upload, MCP job polling, paginated result download,
     and local response reconstruction. It may print sanitized heartbeat lines
     while waiting; treat them as progress only and keep
-    `billing-candidate-response.json` as the authoritative result. Do not retry,
-    split, or reissue the billing lookup unless the command exits with a clear
-    blocker code.
+    `billing-candidate-response.json` as the authoritative result. The default
+    command may reuse an identical completed MCP result for up to 60 minutes;
+    `result_source` reports `cached_result` or `fresh_query`. Add `--refresh`
+    only when the user explicitly requests a fresh DB read or DB data is
+    confirmed to have changed since the cached result. A refresh reruns the MCP
+    query with newly created indexed temporary tables. Changed inputs, expired
+    results, incomplete results, and failed results are never reused. Do not
+    split or otherwise reissue the lookup.
     Do not paste invoice lines, account details, candidate IDs, or raw candidate
     payloads in chat or MCP arguments.
-9. Allow auto-match only for a verified deterministic rule with service,
-   customer/account mapping, provider, and period evidence. Treat amount as
-   variance evidence for the report, not as a deterministic match key. Route
-   zero, multiple, provisional, and billing-only cases to the exception
-   workflow.
+9. For AAPT, use the master account only to confirm that the invoice account
+   resolves to provider AAPT; never use metadata provider-account values as a
+   service match filter. Match the invoice service identifier safely against
+   both DB line number and circuit ID. Require the metadata-to-billing join as
+   customer relationship evidence and the invoice billing month/year. Only one
+   verified candidate may auto-match. Treat amount as report variance evidence,
+   not as a match key. AAPT `rec010` service groups with a numeric zero net
+   charge are intentionally excluded, while zero candidates, multiple
+   candidates, provisional candidates, and billing-only cases go to the
+   exception workflow.
 10. If core persistence is disabled, record `skip` and continue. Accepted
    resolutions remain disabled.
 11. Prepare upload sessions for the frozen final artifact set with
@@ -139,11 +149,22 @@ invoice windows for candidate retrieval and matching.
 Report raw rows, charge-input rows, reference/header rows, aggregation input and
 output rows, suppressed rows, normalized output rows, and financial totals.
 Do not group multiple charged source rows in ParsedOutput. Raw parsed rows
-remain audit grain. Refined/ReconciledOutput may use a runtime-declared
-provider/version reconciliation grain with explicit proof. AAPT raw usage rows
-remain visible in parsed accounting; refined/reconciled output may apply a
-proven provider rule. AAPT invoice `21919695` proves `rec010` internet usage
-collapsed from 181 source rows to one persisted/result row.
+remain audit grain and billing lookup operates on eligible source lines.
+Current AAPT scope processes `rec001`, `rec004`, `rec005`, and `rec010`;
+within that enabled set, `rec001` and `rec005` are mandatory while `rec004` and
+`rec010` are optional. `rec002` and `rec006` are accounted but disabled, and
+`rec012` is reference-only. Refined/ReconciledOutput may aggregate
+only rows that already share one verified billing identity, and must preserve
+the contributing source-line IDs. Preserve all `rec010` source rows in
+ParsedOutput/raw accounting, but exclude a service group from candidate lookup
+and refined financial output when its numeric `Charge(ex GST)` total is zero.
+Never infer that exclusion from description text.
+
+Final report files use the format locked by the runtime at run creation.
+`xlsx` is the default; `csv` is selected only through
+`NEXON_RECON_REPORT_FORMAT=csv`. Publish the exact runtime-emitted paths and
+extensions from the frozen artifact set. Do not rename, convert, re-save, or
+re-download a report to recompute its checksum.
 
 ## Failure Rules
 
