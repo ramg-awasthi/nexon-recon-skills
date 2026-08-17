@@ -127,9 +127,9 @@ candidate count, and whether automatic matching is authorized. The runtime may
 auto-match only verified rules with complete deterministic evidence.
 Provisional, zero-match, multi-match, and conflicting evidence on invoice rows
 remains unresolved. The broad unassociated billing-system population is kept in
-`PreReconciliation/pre-reconciliation.<locked format>` for temporary E2E
+`02_Pre-Reconciliation/pre-reconciliation.<locked format>` for temporary E2E
 diagnosis. It is not an invoice exception and does not enter agent investigation
-or `ReconciledOutput/refined-reconciliation.<locked format>`. This reporting
+or `03_Reconciled-Output/refined-reconciliation.<locked format>`. This reporting
 rule does not narrow, truncate, or rerun the MCP query.
 
 For AAPT, deterministic runtime matching confirms provider AAPT through the

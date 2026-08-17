@@ -43,6 +43,9 @@ uncertain invoice rows, in runtime-emitted bounded batches, to
   preserved in `report_aggregation_manifest.json`.
 - Keep core persistence and accepted-resolution updates independently gated.
   Current report-only runs skip both persistence stages and never update DB.
+- Runtime-created run roots contain these top-level directories:
+  `00_Source-Invoice/`, `01_Parsed-Output/`, `02_Pre-Reconciliation/`,
+  `03_Reconciled-Output/`, `04_Financial-Audit/`, and `Metadata/`.
 
 ## Sequence
 
@@ -81,7 +84,7 @@ uncertain invoice rows, in runtime-emitted bounded batches, to
    `--parsed-publication-receipt`. If the runtime returns
    `awaiting_source_move`, call `recon_sp_move_source` with the unchanged
    runtime request so the original upload is moved into the result run folder
-   under `Invoice/`. Write only the MCP response `structuredContent.data`
+   under `00_Source-Invoice/`. Write only the MCP response `structuredContent.data`
    object as the source-move receipt; do not write the full MCP envelope with
    top-level `schema_version`, `operation`, `status`, `data`, or `error`.
    Then resume with `--source-move-receipt`. Do not re-index or re-download
@@ -89,8 +92,8 @@ uncertain invoice rows, in runtime-emitted bounded batches, to
    server-side verification. Do not use native SharePoint upload/move, text
    reads, agent-side file-byte/base64 payloads, truncated content, or manually
    rebuilt files.
-   The parsed upload set exposes `ParsedOutput/`; the original invoice becomes
-   visible under `Invoice/` by move, not by duplicate upload. After this point,
+   The parsed upload set exposes `01_Parsed-Output/`; the original invoice becomes
+   visible under `00_Source-Invoice/` by move, not by duplicate upload. After this point,
    the upload folder is free for new intake. If DB, matching, investigation, or
    final publication fails later, resume from the result run folder discovered
    with `recon_sp_index_results`; do not reselect the same invoice from upload.
@@ -130,16 +133,16 @@ uncertain invoice rows, in runtime-emitted bounded batches, to
    resolutions remain disabled. If core persistence is enabled, complete its
    existing frozen request/receipt flow before pre-reconciliation generation.
 11. On `awaiting_pre_reconciliation_publication`, upload the frozen
-   `manifest/pre_reconciliation_publication_set.json` through the existing
+   `Metadata/manifest/pre_reconciliation_publication_set.json` through the existing
    `recon_sp_prepare_result_uploads` and
    `nexon-recon upload-result-artifacts` flow. It exposes only the temporary
    diagnostic
-   `PreReconciliation/pre-reconciliation.<locked format>`. Do not call it
+   `02_Pre-Reconciliation/pre-reconciliation.<locked format>`. Do not call it
    refined or print its rows in chat. Resume with
    `--pre-reconciliation-publication-receipt`.
 12. On `awaiting_exception_investigation`, use the returned
    `exception_input_manifest`, which references
-   `evidence/exception_input.json` and its batch files. Delegate each referenced
+   `Metadata/evidence/exception_input.json` and its batch files. Delegate each referenced
    batch to `nexon-recon-exception-investigator`; batches contain at most 100
    genuine uncertain invoice rows, 20 embedded candidates per row, and 512 KiB
    serialized. A true count above 20 is valid when the line appears in
@@ -160,7 +163,7 @@ uncertain invoice rows, in runtime-emitted bounded batches, to
    Agent review may refine uncertain evidence but may not change source facts,
    deterministic matches, or human fields.
 13. After the refined report, require the runtime-generated fourth report at
-    `FinancialAudit/financial-audit.<locked format>`. It audits supplier header
+    `04_Financial-Audit/financial-audit.<locked format>`. It audits supplier header
     charges, actual GST, previous adjustments, detailed supplier lines, refined
     totals, and explicit exclusions. GST and amounts are controls only, never
     matching keys or customer-billing comparisons. No new MCP call or separate
@@ -172,8 +175,8 @@ uncertain invoice rows, in runtime-emitted bounded batches, to
     `recon_sp_prepare_result_uploads` metadata only, run
     `nexon-recon upload-result-artifacts` with the compact receipt and frozen
     `publication_set.json`. Its business results are
-    `ReconciledOutput/refined-reconciliation.<locked format>` and
-    `FinancialAudit/financial-audit.<locked format>`; they must not exist before
+    `03_Reconciled-Output/refined-reconciliation.<locked format>` and
+    `04_Financial-Audit/financial-audit.<locked format>`; they must not exist before
     required verification and finance controls complete. The runtime fetches
     the full upload session from the MCP receipt route. Save the small final
     publication receipt, and resume with `--publication-receipt`. Do not
@@ -197,21 +200,21 @@ invoice windows for candidate retrieval and matching.
 
 Report raw rows, charge-input rows, reference/header rows, aggregation input and
 output rows, suppressed rows, normalized output rows, and financial totals.
-Do not group multiple charged source rows in ParsedOutput. Raw parsed rows
+Do not group multiple charged source rows in 01_Parsed-Output. Raw parsed rows
 remain audit grain and billing lookup operates on eligible source lines.
 Current AAPT scope processes `rec001`, `rec004`, `rec005`, and `rec010`;
 within that enabled set, `rec001` and `rec005` are mandatory while `rec004` and
 `rec010` are optional. `rec002` and `rec006` are accounted but disabled, and
-`rec012` is reference-only. Refined/ReconciledOutput may aggregate
+`rec012` is reference-only. The refined output may aggregate
 only rows that already share one verified billing identity. Record every
 contributing source-line ID in `report_aggregation_manifest.json`; do not add
 internal line/candidate fields to the refined report. Preserve all `rec010`
-source rows in ParsedOutput/raw accounting, but exclude a service group from
+source rows in 01_Parsed-Output/raw accounting, but exclude a service group from
 candidate lookup
 and refined financial output when its numeric `Charge(ex GST)` total is zero.
 Never infer that exclusion from description text.
 
-`PreReconciliation/pre-reconciliation.<format>` is a temporary E2E diagnostic
+`02_Pre-Reconciliation/pre-reconciliation.<format>` is a temporary E2E diagnostic
 checkpoint and may include the full provider-and-period comparison population.
 It is not a refined business report. The final refined report contains only
 invoice-anchored deterministic results plus validated agent-review fields;
@@ -219,7 +222,7 @@ broad unassociated Billing System Only rows do not enter it.
 Report deterministic zero-net exclusions separately; never count them as
 matched or send them to agent verification.
 
-The fourth report, `FinancialAudit/financial-audit.<format>`, is generated after
+The fourth report, `04_Financial-Audit/financial-audit.<format>`, is generated after
 the refined report. For AAPT, use the actual `rec001` `GST Payable` rather than
 deriving GST from line rates. The report ties current ex-GST categories to the
 header, ex-GST plus GST to current charges including GST, detailed supplier
