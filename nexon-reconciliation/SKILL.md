@@ -159,20 +159,30 @@ uncertain invoice rows, in runtime-emitted bounded batches, to
    not exceed the initial allowance.
    Agent review may refine uncertain evidence but may not change source facts,
    deterministic matches, or human fields.
-13. Only after required agent verification is complete, prepare upload sessions
-   for the frozen final artifact set with
-   `recon_sp_prepare_result_uploads` metadata only, run
-   `nexon-recon upload-result-artifacts` with the compact receipt and frozen
-   `publication_set.json`. Its business result is
-   `ReconciledOutput/refined-reconciliation.<locked format>`; it must not exist
-   before required verification completes. The runtime fetches the full upload
-   session from the MCP receipt route. Save the small final
-   publication receipt, and resume with `--publication-receipt`. Do not
-   re-index or re-download final artifacts for SHA checks; the SharePoint MCP
-   upload receipt is the server-side verification. Do not move the source at
-   final publication because manual-upload sources are moved after parsed
-   publication.
-14. Validate the completed state and return sanitized counts and locations.
+13. After the refined report, require the runtime-generated fourth report at
+    `FinancialAudit/financial-audit.<locked format>`. It audits supplier header
+    charges, actual GST, previous adjustments, detailed supplier lines, refined
+    totals, and explicit exclusions. GST and amounts are controls only, never
+    matching keys or customer-billing comparisons. No new MCP call or separate
+    pause is required. A failed control returns `financial_audit_failed` and the
+    run is not successful.
+14. Only after required agent verification and finance controls are complete,
+    prepare upload sessions
+    for the frozen final artifact set with
+    `recon_sp_prepare_result_uploads` metadata only, run
+    `nexon-recon upload-result-artifacts` with the compact receipt and frozen
+    `publication_set.json`. Its business results are
+    `ReconciledOutput/refined-reconciliation.<locked format>` and
+    `FinancialAudit/financial-audit.<locked format>`; they must not exist before
+    required verification and finance controls complete. The runtime fetches
+    the full upload session from the MCP receipt route. Save the small final
+    publication receipt, and resume with `--publication-receipt`. Do not
+    re-index or re-download final artifacts for SHA checks; the SharePoint MCP
+    upload receipt is the server-side verification. Do not move the source at
+    final publication because manual-upload sources are moved after parsed
+    publication.
+15. Validate the completed state and return sanitized counts, all four report
+    locations, and the financial-audit control status.
 
 ## Billing Periods
 
@@ -208,6 +218,13 @@ invoice-anchored deterministic results plus validated agent-review fields;
 broad unassociated Billing System Only rows do not enter it.
 Report deterministic zero-net exclusions separately; never count them as
 matched or send them to agent verification.
+
+The fourth report, `FinancialAudit/financial-audit.<format>`, is generated after
+the refined report. For AAPT, use the actual `rec001` `GST Payable` rather than
+deriving GST from line rates. The report ties current ex-GST categories to the
+header, ex-GST plus GST to current charges including GST, detailed supplier
+lines to the invoice, and refined totals plus explicit exclusions back to those
+supplier lines. It does not change matching.
 
 Final report files use the format locked by the runtime at run creation.
 `xlsx` is the default; `csv` is selected only through

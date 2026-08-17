@@ -27,9 +27,10 @@ Stage order:
 9. temporary pre-reconciliation report and verified publication
 10. bounded exception investigation for genuine uncertain invoice rows
 11. refined report after required investigation
-12. final publication
-13. validation
-14. notification when enabled
+12. supplier financial-audit report
+13. final publication
+14. validation
+15. notification when enabled
 
 ## Durable And Transient Artifacts
 
@@ -198,8 +199,8 @@ per expected receipt and resumes with that manifest through `--investigation`.
 
 `awaiting_publication` occurs only after required investigation batches are
 accepted and freezes local paths, result-relative paths, and checksums for
-final evidence and
-`ReconciledOutput/refined-reconciliation.<locked format>`.
+final evidence, `ReconciledOutput/refined-reconciliation.<locked format>`, and
+`FinancialAudit/financial-audit.<locked format>`.
 `recon_sp_prepare_result_uploads` returns a compact upload-session receipt for
 the exact final result set while the full per-file upload session stays
 server-side. `nexon-recon upload-result-artifacts` fetches that full session
@@ -234,6 +235,14 @@ require review. Broad unassociated Billing System Only rows remain visible in
 the pre-reconciliation diagnostic but do not enter investigation or the refined
 report. Deterministic zero-net exclusions also do not enter investigation.
 They are reported as exclusions and never counted as matched.
+
+The financial-audit report is the fourth report and runs after refinement. For
+AAPT it preserves the `rec001` supplier breakdown, actual GST payable, current
+charges including GST, previous account movements, detailed supplier-line
+total, refined supplier total, and explicit exclusions. These are financial
+controls only. GST and supplier/customer amount differences never alter service
+matching. A failed control preserves generated evidence but blocks a successful
+terminal validation with `financial_audit_failed`.
 
 ## Failure Contract
 

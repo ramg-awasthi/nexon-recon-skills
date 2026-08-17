@@ -37,3 +37,8 @@ Runtime boundary: the installed `nexon-recon parse --provider AAPT` command.
   exclude them from refined financial output. Never use description text for
   this decision.
 - Do not add guessed column mappings or infer missing invoice rows.
+- Preserve the complete `rec001` supplier financial breakdown for the final
+  finance report: current categories excluding GST, actual `GST Payable`,
+  current charges including GST, previous account, payments, and previous bill
+  adjustments. The header GST is authoritative; line GST rates are supporting
+  source data and must not replace it.
