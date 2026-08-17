@@ -115,16 +115,34 @@ full invoice lines, account details, or model-authored SQL.
 
 ## Candidate Semantics
 
-The MCP returns both:
+The MCP returns the complete query evidence for the invoice-derived provider
+and period, including:
 
 - supplier-linked candidates associated with known invoice lines; and
-- billing-only candidates that have no supplier line in the current invoice.
+- billing-system rows not associated with a supplier line in the current
+  invoice.
 
 Each line association declares its retrieval rule, rule status, candidate IDs,
 candidate count, and whether automatic matching is authorized. The runtime may
 auto-match only verified rules with complete deterministic evidence.
-Provisional, zero-match, multi-match, and conflicting evidence remains
-unresolved. Billing-only rows are retained in the reports and exception set.
+Provisional, zero-match, multi-match, and conflicting evidence on invoice rows
+remains unresolved. The broad unassociated billing-system population is kept in
+`PreReconciliation/pre-reconciliation.<locked format>` for temporary E2E
+diagnosis. It is not an invoice exception and does not enter agent investigation
+or `ReconciledOutput/refined-reconciliation.<locked format>`. This reporting
+rule does not narrow, truncate, or rerun the MCP query.
+
+For AAPT, deterministic runtime matching confirms provider AAPT through the
+master account relationship, uses the `rec001` billing month/year, and matches
+the invoice identifier against `line_number` OR `circuit_id` through the
+metadata-to-billing relationship. Amount and metadata
+`service_provider_account_number` are not match keys.
+
+Exception transport never truncates the true candidate count. A bounded batch
+embeds at most 20 candidate records per invoice line and is at most 512 KiB. If
+the true count exceeds 20, `candidate_counts` keeps that count, the line appears
+in `candidate_overflow_lines`, and its `candidates_by_line` entry is empty. The
+investigator must not suggest a candidate from an omitted overflow set.
 
 ## Billing Period
 
