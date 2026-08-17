@@ -21,7 +21,7 @@ to `nexon-recon-exception-investigator`.
   runtime-requested source movement. Use native SharePoint only for setup
   validation.
 - Use `recon_db_prepare_billing_candidates` once with the runtime-emitted plan
-  SHA/size, then use `nexon-recon billing-candidates` once with the scoped
+  SHA/size, then use `nexon-recon billing-candidates` with the scoped
   session and frozen `billing_candidate_plan`. Do not call
   `recon_db_get_billing_candidates` directly during normal runs. Use
   `recon_db_read_query` only for bounded exception evidence.
@@ -95,15 +95,20 @@ to `nexon-recon-exception-investigator`.
    `recon_db_prepare_billing_candidates` with the runtime-emitted plan SHA/size,
    save the scoped session, then run
     `nexon-recon billing-candidates --plan ... --session ... --output ...`
-    exactly once with the frozen `billing_candidate_plan`, then use
+    with the frozen `billing_candidate_plan`, then use
     `nexon-recon resume
     --billing-candidate-response ...`.
     The command owns plan upload, MCP job polling, paginated result download,
     and local response reconstruction. It may print sanitized heartbeat lines
     while waiting; treat them as progress only and keep
-    `billing-candidate-response.json` as the authoritative result. Do not retry,
-    split, or reissue the billing lookup unless the command exits with a clear
-    blocker code.
+    `billing-candidate-response.json` as the authoritative result. The default
+    command may reuse an identical completed MCP result for up to 60 minutes;
+    `result_source` reports `cached_result` or `fresh_query`. Add `--refresh`
+    only when the user explicitly requests a fresh DB read or DB data is
+    confirmed to have changed since the cached result. A refresh reruns the MCP
+    query with newly created indexed temporary tables. Changed inputs, expired
+    results, incomplete results, and failed results are never reused. Do not
+    split or otherwise reissue the lookup.
     Do not paste invoice lines, account details, candidate IDs, or raw candidate
     payloads in chat or MCP arguments.
 9. For AAPT, use the master account only to confirm that the invoice account

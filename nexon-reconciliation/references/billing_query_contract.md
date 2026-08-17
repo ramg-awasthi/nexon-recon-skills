@@ -46,9 +46,9 @@ The request is built and frozen inside the deterministic runtime. It contains:
 - requested mapping version;
 - idempotency key.
 
-Call `recon_db_prepare_billing_candidates` exactly once with the runtime-emitted
-plan SHA/size, save the scoped session response, then run the command exactly
-once with the frozen plan and session:
+Call `recon_db_prepare_billing_candidates` with the runtime-emitted plan
+SHA/size, save the scoped session response, then run the command with the frozen
+plan and session:
 
 ```text
 nexon-recon billing-candidates \
@@ -68,6 +68,28 @@ downloads result pages when the job succeeds, and writes the complete
 `candidate_response.json`. Page size is only a transport chunk size; it is not a
 normal reconciliation failure limit. If the job fails or times out, the command
 writes one failed MCP-style response with a single blocker code.
+
+By default, the MCP reuses an identical completed result for up to 60 minutes,
+including after an MCP restart. The cache identity includes environment, run ID,
+input hash, and mapping version. The command reports `cached_result` when it
+reuses that result and `fresh_query` when it queries the DB. Changed, expired,
+incomplete, corrupt, or failed results are not reused.
+
+Use `--refresh` only when the user explicitly requests a fresh DB read or DB
+data is confirmed to have changed since the cached result:
+
+```text
+nexon-recon billing-candidates \
+  --plan <billing_candidate_plan.json> \
+  --session <billing_candidate_session.json> \
+  --output <candidate_response.json> \
+  --refresh
+```
+
+A fresh lookup creates new indexed SQL temporary tables inside one read-only
+transaction, stores the completed paginated result for bounded reuse, rolls
+back, and closes the connection. Fleet never creates or retains SQL temporary
+tables itself.
 
 ## Response And Resume
 
