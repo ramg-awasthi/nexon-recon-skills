@@ -126,8 +126,11 @@ uncertain invoice rows, in runtime-emitted bounded batches, to
    relationship evidence. Never use amount or metadata
    `service_provider_account_number` as a match key. Only one verified
    candidate may auto-match. AAPT `rec010` service groups with a numeric zero
-   net charge are deterministic exclusions. Zero, provisional, and multiple
-   candidates on invoice rows remain uncertain. Broad unassociated Billing
+   net charge are deterministic exclusions. A multiple-candidate invoice row
+   follows Lizeth's any-identifier-hit rule and is marked Matched; retain the
+   candidate count and evidence rather than treating it as a missing match.
+   Zero, provisional, and single-candidate rows with incomplete evidence remain
+   uncertain. Broad unassociated Billing
    System Only rows are diagnostic population, not invoice exceptions.
 10. If core persistence is disabled, record `skip` and continue. Accepted
    resolutions remain disabled. If core persistence is enabled, complete its
