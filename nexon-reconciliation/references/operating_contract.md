@@ -236,10 +236,13 @@ account relationship, uses the `rec001` billing month/year, and matches the
 invoice identifier against `line_number` OR `circuit_id` through the
 metadata-to-billing relationship. Amount and metadata
 `service_provider_account_number` are not match keys. A single verified
-candidate may auto-match; zero, provisional, and multiple invoice candidates
-require review. Broad unassociated Billing System Only rows remain visible in
-the pre-reconciliation diagnostic but do not enter investigation or the refined
-report. Deterministic zero-net exclusions also do not enter investigation.
+candidate may auto-match. Multiple invoice candidates follow Lizeth's
+identifier-hit rule and are marked Matched while retaining their candidate
+count and evidence; zero, provisional, and single-candidate rows with
+incomplete evidence require review. Broad unassociated Billing System Only
+rows remain visible in the pre-reconciliation diagnostic but do not enter
+investigation or the refined report. Deterministic zero-net exclusions also do
+not enter investigation.
 They are reported as exclusions and never counted as matched.
 
 The financial-audit report is the fourth report and runs after refinement. For
