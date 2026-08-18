@@ -48,19 +48,25 @@ endpoints, and authorization headers remain outside run artifacts.
 
 Every run contains its run, audit, parser, unpack, warning, normalized-line,
 runtime-identity, and frozen-settings artifacts. Reconciliation also exposes a
-SharePoint-facing parsed phase under `ParsedOutput/`, moves the original upload
-into the result run folder under `Invoice/`, then later records the
+SharePoint-facing parsed phase under `01_Parsed-Output/`, moves the original upload
+into the result run folder under `00_Source-Invoice/`, then later records the
 billing-candidate contract identity, sanitized query receipt, matching
-evidence, the temporary `PreReconciliation/` diagnostic checkpoint,
-`ReconciledOutput/` reports, investigation evidence when applicable, and
+evidence, the temporary `02_Pre-Reconciliation/` diagnostic checkpoint,
+`03_Reconciled-Output/` reports, investigation evidence when applicable, and
 publication verification.
+
+Runtime-created run roots contain these top-level directories:
+`00_Source-Invoice/`, `01_Parsed-Output/`, `02_Pre-Reconciliation/`,
+`03_Reconciled-Output/`, `04_Financial-Audit/`, and `Metadata/`. Supporting
+manifests, normalized JSON, logs, evidence, and internal report copies live
+under `Metadata/`.
 
 ## Parsed Publication Pause
 
 `awaiting_parsed_publication` means provider parsing is complete and the
 runtime has frozen a small parsed artifact set before DB matching begins. The
-set contains `ParsedOutput/raw_parsed_invoice.csv` and
-`ParsedOutput/parser_manifest.json`.
+set contains `01_Parsed-Output/raw_parsed_invoice.csv` and
+`01_Parsed-Output/parser_manifest.json`.
 
 The supervisor prepares upload sessions only for that frozen set through
 `recon_sp_prepare_result_uploads`. Only frozen metadata is sent:
@@ -75,7 +81,7 @@ supervisor must not re-index or re-download parsed artifacts for SHA checks.
 The supervisor resumes with `--parsed-publication-receipt`. For manual-upload
 runs, the runtime then emits `awaiting_source_move`; the supervisor calls
 `recon_sp_move_source` with the unchanged runtime request so the original upload
-is moved into the result run folder under `Invoice/`. The supervisor writes only
+is moved into the result run folder under `00_Source-Invoice/`. The supervisor writes only
 the MCP response `structuredContent.data` object as the source-move receipt; it
 must not write the full MCP envelope with top-level `schema_version`,
 `operation`, `status`, `data`, or `error`. The supervisor then resumes with
@@ -89,7 +95,7 @@ not by re-indexing the upload folder.
 
 `awaiting_billing_candidates` means:
 
-- `manifest/billing_candidate_plan.json` contains the frozen request used by
+- `Metadata/manifest/billing_candidate_plan.json` contains the frozen request used by
   `nexon-recon billing-candidates`;
 - the request is built only by the deterministic runtime and includes typed
   provider accounts, invoice-derived effective periods, normalized line
@@ -142,10 +148,10 @@ from Database MCP availability alone.
 ## Pre-Reconciliation Publication
 
 After deterministic comparison, the runtime freezes
-`manifest/pre_reconciliation_publication_set.json` and pauses at
+`Metadata/manifest/pre_reconciliation_publication_set.json` and pauses at
 `awaiting_pre_reconciliation_publication`. Its user-visible artifact is the
 temporary E2E diagnostic
-`PreReconciliation/pre-reconciliation.<locked format>`. It may contain the full
+`02_Pre-Reconciliation/pre-reconciliation.<locked format>`. It may contain the full
 provider-and-period comparison population and must never be labelled refined.
 
 Use the existing `recon_sp_prepare_result_uploads` and
@@ -158,8 +164,8 @@ verified.
 ## Exception Investigation
 
 `awaiting_exception_investigation` returns `exception_input_manifest`, which
-points to `evidence/exception_input.json` and references runtime-emitted files
-under `evidence/exception_batches/`. Each batch contains at most 100 genuine
+points to `Metadata/evidence/exception_input.json` and references runtime-emitted files
+under `Metadata/evidence/exception_batches/`. Each batch contains at most 100 genuine
 uncertain invoice rows, 20 embedded candidate records per row, and 512 KiB
 serialized. If a true count exceeds 20, the runtime preserves it in
 `candidate_counts`, identifies the line in `candidate_overflow_lines`, and
@@ -199,8 +205,8 @@ per expected receipt and resumes with that manifest through `--investigation`.
 
 `awaiting_publication` occurs only after required investigation batches are
 accepted and freezes local paths, result-relative paths, and checksums for
-final evidence, `ReconciledOutput/refined-reconciliation.<locked format>`, and
-`FinancialAudit/financial-audit.<locked format>`.
+final evidence, `03_Reconciled-Output/refined-reconciliation.<locked format>`, and
+`04_Financial-Audit/financial-audit.<locked format>`.
 `recon_sp_prepare_result_uploads` returns a compact upload-session receipt for
 the exact final result set while the full per-file upload session stays
 server-side. `nexon-recon upload-result-artifacts` fetches that full session
