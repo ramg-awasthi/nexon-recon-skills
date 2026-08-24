@@ -28,9 +28,10 @@ Stage order:
 10. bounded exception investigation for genuine uncertain invoice rows
 11. refined report after required investigation
 12. supplier financial-audit report
-13. final publication
-14. validation
-15. notification when enabled
+13. refined verification before final publication
+14. final publication
+15. validation
+16. notification when enabled
 
 ## Durable And Transient Artifacts
 
@@ -200,6 +201,28 @@ receipt binds `contract_version=1`, the run ID, batch ID, and the exact batch
 line set. Using the runtime-owned `investigation_receipt_template`, the
 supervisor builds a small manifest with one `{batch_id,path,sha256}` reference
 per expected receipt and resumes with that manifest through `--investigation`.
+
+## Refined Verification Pause
+
+After the refined report and financial audit are generated, the runtime pauses
+at `awaiting_refined_verification` before freezing final publication. Its compact
+input manifest binds parser, candidate, matching, aggregation, refined-report,
+and financial-audit artifacts by path and SHA-256. The supervisor verifies
+source coverage, report lineage, match decisions, billing evidence, and finance
+controls from those actual files.
+
+Frozen run evidence is the starting point, not a prohibition on diagnosis. If
+the review finds a specific discrepancy, the supervisor may use the existing
+`recon_db_read_query` at most the emitted `diagnostic_query_rounds`, scoped to
+the affected provider, invoice period, line/circuit identifier, and rows. It
+must save the sanitized receipt under the run root and reference only its path,
+SHA-256, and purpose in the compact verification receipt. It must not re-run
+the broad candidate lookup or use free-form/broad SQL.
+
+The receipt has five mandatory check outcomes. `passed` advances to final
+publication. A `warning` records a narrow historical-baseline difference and
+never hides a failed check. `failed` preserves artifacts and blocks
+publication; verification never edits a report to make it pass.
 
 ## Publication Pause
 
